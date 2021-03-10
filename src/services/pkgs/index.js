@@ -33,6 +33,39 @@ router.get("/search/:query", async (req, res, next) => {
     }
 })
 
+router.get("/:handle/:version", async (req, res, next) => {
+    try {
+        const { handle, version } = req.params
+        const package =
+            await PkgsModel
+                .findOne({ handle })
+                .select('-__v')
+                .populate({
+                    path: "author",
+                    select: "email -_id"
+                })
+
+        if (!package) {
+            const notFound = new Error("Not found")
+            notFound.httpStatusCode = 404
+            throw notFound
+        }
+
+
+
+        const packageDoc = Object.assign({}, package._doc)
+        packageDoc.version = package.versions.find(v => v.semantic === version)
+        delete packageDoc.versions
+
+
+        if (!packageDoc.version) throw new Error(`Version ${version} not available`)
+
+        res.json(packageDoc)
+    } catch (error) {
+        next(error)
+    }
+})
+
 router.get("/:handle", async (req, res, next) => {
     try {
         const { handle } = req.params
@@ -51,7 +84,11 @@ router.get("/:handle", async (req, res, next) => {
             throw notFound
         }
 
-        res.json(package)
+        const packageDoc = Object.assign({}, package._doc)
+        packageDoc.version = package.versions[0]
+        delete packageDoc.versions
+
+        res.json(packageDoc)
     } catch (error) {
         next(error)
     }
