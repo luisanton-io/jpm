@@ -2,7 +2,6 @@ const express = require("express")
 const q2m = require("query-to-mongo")
 const { authorize } = require("../auth")
 
-const UserSchema = require("./model")
 const UserModel = require("./model")
 const { authenticate, refreshTokens } = require("./authTools")
 const uniqid = require("uniqid")
@@ -12,7 +11,7 @@ usersRouter.get("/", authorize, async (req, res, next) => {
   try {
     const query = q2m(req.query)
 
-    const users = await UserSchema.find(query.criteria, query.options.fields)
+    const users = await UserModel.find(query.criteria, query.options.fields)
       .skip(query.options.skip)
       .limit(query.options.limit)
       .sort(query.options.sort)
@@ -37,7 +36,7 @@ usersRouter.get("/me", authorize, async (req, res, next) => {
 
 usersRouter.post("/signup", async (req, res, next) => {
   try {
-    const newUser = new UserSchema(req.body)
+    const newUser = new UserModel(req.body)
     const { _id } = await newUser.save()
 
     res.status(201).send(_id)
